@@ -80,7 +80,7 @@
             <header class="bg-white shadow-sm h-16 flex items-center justify-between px-8 border-b border-slate-200">
                 <h1 id="page-title" class="text-xl font-bold text-slate-800">📊 Dashboard Interactivo</h1>
                 <div class="flex items-center gap-4">
-                    <span class="text-xs text-slate-500 font-medium">Av. Dorrego 2646, CABA | 4777-9336</span>[cite: 4]
+                    <span class="text-xs text-slate-500 font-medium">Av. Dorrego 2646, CABA | 4777-9336[cite: 4]</span>
                     <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold animate-pulse">🟢 En Red</span>
                 </div>
             </header>
@@ -88,12 +88,13 @@
             <div class="p-8 space-y-6">
                 <!-- DASHBOARD -->
                 <div id="view-dashboard" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Total Operarios</p><h3 id="kpi-operarios" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-emerald-600 uppercase">Activos</p><h3 id="kpi-activos" class="text-2xl font-bold text-emerald-600 mt-1">0</h3></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-red-600 uppercase">Inactivos</p><h3 id="kpi-inactivos" class="text-2xl font-bold text-red-600 mt-1">0</h3></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-blue-600 uppercase">Antigüedad Promedio</p><h3 id="kpi-antiguedad" class="text-2xl font-bold text-blue-600 mt-1">0 años</h3></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Clientes</p><h3 id="kpi-clientes" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-emerald-600 uppercase">Activos (Op.)</p><h3 id="kpi-activos" class="text-2xl font-bold text-emerald-600 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-red-600 uppercase">Inactivos (Op.)</p><h3 id="kpi-inactivos" class="text-2xl font-bold text-red-600 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Total Clientes</p><h3 id="kpi-clientes" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-emerald-600 uppercase">Clientes Activos</p><h3 id="kpi-clientes-activos" class="text-2xl font-bold text-emerald-600 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-red-600 uppercase">Clientes Inactivos</p><h3 id="kpi-clientes-inactivos" class="text-2xl font-bold text-red-600 mt-1">0</h3></div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -138,7 +139,7 @@
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Razón Social</th><th class="p-4">Dirección</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Razón Social</th><th class="p-4">Dirección</th><th class="p-4">Estado</th><th class="p-4 text-center">Acciones</th></tr></thead>
                             <tbody id="table-clientes-body" class="divide-y text-sm"></tbody>
                         </table>
                     </div>
@@ -326,17 +327,14 @@
             let activos = db.operarios.filter(o => !o.egreso || o.egreso.trim() === "").length;
             let inactivos = db.operarios.length - activos;
 
-            let totalAnos = 0;
-            let conIngreso = 0;
+            let clientesActivos = db.clientes.filter(c => !c.estado || c.estado === 'Activo').length;
+            let clientesInactivos = db.clientes.length - clientesActivos;
+
             let listContainer = document.getElementById('dashboard-antiguedad-list');
             listContainer.innerHTML = '';
 
             db.operarios.forEach(o => {
                 let ant = calcularAntiguedadDetalle(o.ingreso);
-                if(o.ingreso) {
-                    totalAnos += ant.anos;
-                    conIngreso++;
-                }
                 listContainer.innerHTML += `
                     <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl text-xs">
                         <span class="font-medium text-slate-800">${o.nombre}</span>
@@ -344,13 +342,12 @@
                     </div>`;
             });
 
-            let promedioAntiguedad = conIngreso > 0 ? (totalAnos / conIngreso).toFixed(1) : 0;
-
             document.getElementById('kpi-operarios').innerText = db.operarios.length;
             document.getElementById('kpi-activos').innerText = activos;
             document.getElementById('kpi-inactivos').innerText = inactivos;
-            document.getElementById('kpi-antiguedad').innerText = promedioAntiguedad + " años";
             document.getElementById('kpi-clientes').innerText = db.clientes.length;
+            document.getElementById('kpi-clientes-activos').innerText = clientesActivos;
+            document.getElementById('kpi-clientes-inactivos').innerText = clientesInactivos;
 
             // Alertas VTV
             const vtvContainer = document.getElementById('vtv-alerts-container');
@@ -413,9 +410,13 @@
             tbody.innerHTML = '';
             db.clientes.forEach((cli, idx) => {
                 if(!cli.nombre.toLowerCase().includes(filter.toLowerCase())) return;
+                let isCliActive = !cli.estado || cli.estado === 'Activo';
+                let badge = isCliActive ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">Activo</span>' : '<span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Inactivo</span>';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('cliente', ${idx})">
-                        <td class="p-4 font-semibold text-slate-800">${cli.nombre}</td><td class="p-4 text-slate-600">${cli.direccion}</td>
+                        <td class="p-4 font-semibold text-slate-800">${cli.nombre}</td>
+                        <td class="p-4 text-slate-600">${cli.direccion}</td>
+                        <td class="p-4">${badge}</td>
                         <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('clientes', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('clientes', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
                     </tr>`;
             });
@@ -484,8 +485,9 @@
                 html = `<p><strong>Nombre y Apellido:</strong> ${op.nombre}</p><p><strong>Legajo:</strong> ${op.leg}</p><p><strong>CUIL:</strong> ${op.cuil}</p><p><strong>Antigüedad:</strong> ${calcularAntiguedadDetalle(op.ingreso).texto}</p><p><strong>Estado:</strong> ${isActive ? 'Activo' : 'Inactivo'}</p><p><strong>Domicilio y Tel.:</strong> ${op.domicilio}</p><p><strong>Ingreso:</strong> ${op.ingreso}</p><p><strong>Egreso:</strong> ${op.egreso || 'Activo'}</p><p><strong>Categoría:</strong> ${op.categoria}</p>`;
             } else if(type === 'cliente') {
                 let cli = db.clientes[idx];
+                let isCliActive = !cli.estado || cli.estado === 'Activo';
                 title = "Información del Cliente";
-                html = `<p><strong>Razón Social:</strong> ${cli.nombre}</p><p><strong>CUIT:</strong> ${cli.facturacion}</p><p><strong>Mail:</strong> ${cli.mail}</p><p><strong>Dirección:</strong> ${cli.direccion}</p>`;
+                html = `<p><strong>Razón Social:</strong> ${cli.nombre}</p><p><strong>Estado:</strong> ${isCliActive ? 'Activo' : 'Inactivo'}</p><p><strong>CUIT:</strong> ${cli.facturacion}</p><p><strong>Mail:</strong> ${cli.mail}</p><p><strong>Dirección:</strong> ${cli.direccion}</p>`;
             } else if(type === 'personal') {
                 let p = db.personal[idx];
                 title = "Personal Oficial";
@@ -526,7 +528,19 @@
                     </div>
                     <input type="text" placeholder="Domicilio y Teléfono" id="f-domicilio" value="${data.domicilio || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
             } else if(type === 'clientes') {
-                container.innerHTML = `<input type="text" placeholder="Razón Social" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Dirección" id="f-direccion" value="${data.direccion || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Mail" id="f-mail" value="${data.mail || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="CUIT" id="f-facturacion" value="${data.facturacion || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+                let estadoActual = data.estado || 'Activo';
+                container.innerHTML = `
+                    <input type="text" placeholder="Razón Social" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="Dirección" id="f-direccion" value="${data.direccion || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="Mail" id="f-mail" value="${data.mail || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="CUIT" id="f-facturacion" value="${data.facturacion || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">Estado del Cliente</label>
+                        <select id="f-estado" class="w-full p-2.5 border rounded-xl text-sm mt-1">
+                            <option value="Activo" ${estadoActual === 'Activo' ? 'selected' : ''}>Activo</option>
+                            <option value="Inactivo" ${estadoActual === 'Inactivo' ? 'selected' : ''}>Inactivo</option>
+                        </select>
+                    </div>`;
             } else if(type === 'personal') {
                 container.innerHTML = `<input type="text" placeholder="Nombre" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Celular" id="f-celular" value="${data.celular || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Modelo" id="f-modelo" value="${data.modelo || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="CUIL" id="f-cuil" value="${data.cuil || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
             } else if(type === 'proveedores') {
@@ -544,7 +558,7 @@
             if(currentEditingType === 'operarios') {
                 obj = { leg: Number(document.getElementById('f-leg').value), nombre: document.getElementById('f-nombre').value, cuil: document.getElementById('f-cuil').value, categoria: document.getElementById('f-categoria').value, ingreso: document.getElementById('f-ingreso').value, egreso: document.getElementById('f-egreso').value, domicilio: document.getElementById('f-domicilio').value };
             } else if(currentEditingType === 'clientes') {
-                obj = { nombre: document.getElementById('f-nombre').value, direccion: document.getElementById('f-direccion').value, mail: document.getElementById('f-mail').value, facturacion: document.getElementById('f-facturacion').value };
+                obj = { nombre: document.getElementById('f-nombre').value, direccion: document.getElementById('f-direccion').value, mail: document.getElementById('f-mail').value, facturacion: document.getElementById('f-facturacion').value, estado: document.getElementById('f-estado').value };
             } else if(currentEditingType === 'personal') {
                 obj = { nombre: document.getElementById('f-nombre').value, celular: document.getElementById('f-celular').value, modelo: document.getElementById('f-modelo').value, cuil: document.getElementById('f-cuil').value };
             } else if(currentEditingType === 'proveedores') {
@@ -610,7 +624,8 @@
                         nombre: r['Clientes'] || '',
                         direccion: r['Direccion '] || '',
                         mail: r['Mail'] || '',
-                        facturacion: r['Datos facturacion'] || ''
+                        facturacion: r['Datos facturacion'] || '',
+                        estado: 'Activo'
                     }));
                 }
                 await saveDBToBackend();
