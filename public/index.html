@@ -20,12 +20,12 @@
                 </div>
                 <h2 class="text-2xl font-black text-slate-900 tracking-wider">ECOLUX</h2>
                 <p class="text-xs text-blue-600 font-bold uppercase tracking-widest">Excelencia en Limpieza</p>
-                <p class="text-xs text-slate-500 pt-2">Ingrese sus credenciales para acceder al sistema</p>
+                <p class="text-xs text-slate-500 pt-2">Av. Dorrego 2646, CABA[cite: 4]</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuario</label>
-                    <input type="text" id="login-user" placeholder="Ej. admin o matias" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-blue-600">
+                    <input type="text" id="login-user" placeholder="Usuario" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-blue-600">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contraseña</label>
@@ -34,14 +34,13 @@
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition text-sm">Iniciar Sesión</button>
             </form>
             <div class="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
-                💡 Usuario por defecto: <strong class="text-slate-700">admin</strong> / Contraseña: <strong class="text-slate-700">1234</strong>
+                🔐 Acceso exclusivo autorizado para personal de Ecolux.
             </div>
         </div>
     </div>
 
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="app-container" class="flex h-screen overflow-hidden hidden">
-        <!-- Sidebar -->
         <aside class="w-72 bg-slate-900 text-white flex flex-col shadow-xl">
             <div class="p-6 border-b border-slate-800 flex flex-col gap-1">
                 <div class="flex items-center gap-3">
@@ -66,7 +65,7 @@
             </nav>
             <div class="p-4 border-t border-slate-800 bg-slate-950 space-y-3">
                 <div class="flex items-center justify-between text-xs text-slate-400">
-                    <span>Usuario: <strong id="current-user-lbl" class="text-emerald-400"></strong></span>
+                    <span>Usuario: <strong class="text-emerald-400">ecolux</strong></span>
                     <button onclick="logout()" class="text-red-400 hover:text-red-300 font-semibold underline">Salir</button>
                 </div>
                 <div>
@@ -86,7 +85,7 @@
                 </div>
             </header>
 
-            <div class="p-8">
+            <div class="p-8 space-y-6">
                 <!-- DASHBOARD -->
                 <div id="view-dashboard" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -98,19 +97,22 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Desglose de Antigüedades en Dashboard -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                            <h3 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-clock text-blue-600 mr-2"></i> Detalle de Antigüedad del Personal</h3>
+                            <div class="flex-1 overflow-y-auto max-h-60 space-y-2 pr-2" id="dashboard-antiguedad-list"></div>
+                        </div>
+
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                             <h3 class="font-bold text-slate-700 mb-4">Operarios por Categoría</h3>
-                            <div class="h-64 flex items-center justify-center"><canvas id="chartCategorias"></canvas></div>
+                            <div class="h-52 flex items-center justify-center"><canvas id="chartCategorias"></canvas></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                            <div>
-                                <h3 class="font-bold text-slate-700 mb-2">🛡️ Registro de Auditoría y Actividad</h3>
-                                <p class="text-sm text-slate-600 mb-4">Todas las altas, modificaciones y eliminaciones quedan registradas con el usuario responsable.</p>
-                            </div>
-                            <div id="last-activity" class="p-3 bg-slate-50 rounded-xl text-xs text-slate-500 border border-slate-100">
-                                Última modificación: Ninguna registrada en esta sesión.
-                            </div>
-                        </div>
+                    </div>
+
+                    <!-- Alertas de Vencimiento VTV -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Estado de Vencimiento VTV de Vehículos</h3>
+                        <div id="vtv-alerts-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                     </div>
                 </div>
 
@@ -192,7 +194,7 @@
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Vehículo</th><th class="p-4">Patente</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Vehículo</th><th class="p-4">Patente</th><th class="p-4">Vencimiento VTV</th><th class="p-4 text-center">Acciones</th></tr></thead>
                             <tbody id="table-vehiculos-body" class="divide-y text-sm"></tbody>
                         </table>
                     </div>
@@ -227,16 +229,14 @@
 
     <script>
         let db = { operarios: [], clientes: [], personal: [], proveedores: [], numeros: [], vehiculos: [] };
-        let currentUser = localStorage.getItem('ecolux_current_user') || null;
+        let isLoggedIn = localStorage.getItem('ecolux_logged') === 'true';
         let chartInstance = null;
         let currentEditingType = null;
         let currentEditingIdx = null;
 
-        // Validar sesión activa
-        if(currentUser) {
+        if(isLoggedIn) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('current-user-lbl').innerText = currentUser;
             loadDataFromBackend();
         }
 
@@ -245,21 +245,19 @@
             const user = document.getElementById('login-user').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
             
-            // Credenciales válidas (puedes agregar más o conectar a backend)
-            if((user === 'admin' && pass === '1234') || (user.length > 0 && pass.length > 0)) {
-                currentUser = user;
-                localStorage.setItem('ecolux_current_user', currentUser);
+            if(user === 'ecolux' && pass === 'Dorrego2646*') {
+                isLoggedIn = true;
+                localStorage.setItem('ecolux_logged', 'true');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
-                document.getElementById('current-user-lbl').innerText = currentUser;
                 loadDataFromBackend();
             } else {
-                alert("Usuario o contraseña incorrectos.");
+                alert("Usuario o contraseña incorrectos. Usuario autorizado: ecolux");
             }
         }
 
         function logout() {
-            localStorage.removeItem('ecolux_current_user');
+            localStorage.removeItem('ecolux_logged');
             location.reload();
         }
 
@@ -267,7 +265,7 @@
             try {
                 const res = await fetch('/api/data');
                 const data = await res.json();
-                db = data.db || data; // Soporte para formato de auditoría
+                db = data.db || data;
                 renderDashboard();
                 refreshCurrentView();
             } catch(e) {
@@ -277,11 +275,7 @@
 
         async function saveDBToBackend() {
             try {
-                const payload = {
-                    db: db,
-                    user: currentUser,
-                    timestamp: new Date().toLocaleString()
-                };
+                const payload = { db: db, user: "ecolux", timestamp: new Date().toLocaleString() };
                 await fetch('/api/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -294,16 +288,18 @@
             }
         }
 
-        function calcularAntiguedad(fechaIngreso) {
-            if(!fechaIngreso) return "N/D";
+        function calcularAntiguedadDetalle(fechaIngreso) {
+            if(!fechaIngreso) return { anos: 0, texto: "N/D" };
             const ingreso = new Date(fechaIngreso);
             const hoy = new Date();
             let anos = hoy.getFullYear() - ingreso.getFullYear();
-            const m = hoy.getMonth() - ingreso.getMonth();
-            if (m < 0 || (m === 0 && hoy.getDate() < ingreso.getDate())) {
+            let meses = hoy.getMonth() - ingreso.getMonth();
+            if (meses < 0 || (meses === 0 && hoy.getDate() < ingreso.getDate())) {
                 anos--;
+                meses += 12;
             }
-            return anos < 0 ? "0 años" : anos + (anos === 1 ? " año" : " años");
+            if (anos < 0) return { anos: 0, texto: "0 años" };
+            return { anos: anos, texto: `${anos} ${anos === 1 ? 'año' : 'años'} ${meses > 0 ? 'y ' + meses + 'm' : ''}` };
         }
 
         function switchTab(tab) {
@@ -332,15 +328,22 @@
 
             let totalAnos = 0;
             let conIngreso = 0;
+            let listContainer = document.getElementById('dashboard-antiguedad-list');
+            listContainer.innerHTML = '';
+
             db.operarios.forEach(o => {
+                let ant = calcularAntiguedadDetalle(o.ingreso);
                 if(o.ingreso) {
-                    const ingreso = new Date(o.ingreso);
-                    const hoy = new Date();
-                    let anos = hoy.getFullYear() - ingreso.getFullYear();
-                    totalAnos += (anos >= 0 ? anos : 0);
+                    totalAnos += ant.anos;
                     conIngreso++;
                 }
+                listContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl text-xs">
+                        <span class="font-medium text-slate-800">${o.nombre}</span>
+                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg">${ant.texto}</span>
+                    </div>`;
             });
+
             let promedioAntiguedad = conIngreso > 0 ? (totalAnos / conIngreso).toFixed(1) : 0;
 
             document.getElementById('kpi-operarios').innerText = db.operarios.length;
@@ -348,6 +351,30 @@
             document.getElementById('kpi-inactivos').innerText = inactivos;
             document.getElementById('kpi-antiguedad').innerText = promedioAntiguedad + " años";
             document.getElementById('kpi-clientes').innerText = db.clientes.length;
+
+            // Alertas VTV
+            const vtvContainer = document.getElementById('vtv-alerts-container');
+            vtvContainer.innerHTML = '';
+            const hoy = new Date();
+            db.vehiculos.forEach(v => {
+                if(!v.vtoVtv) return;
+                const vtvDate = new Date(v.vtoVtv);
+                const diffDays = Math.ceil((vtvDate - hoy) / (1000 * 60 * 60 * 24));
+                let badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                let statusText = `Vence en ${diffDays} días`;
+                if(diffDays < 0) {
+                    badgeColor = "bg-red-50 text-red-700 border-red-200";
+                    statusText = "¡VTV VENCIDA!";
+                } else if(diffDays <= 30) {
+                    badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                    statusText = `¡Próxima a vencer (${diffDays} días)!`;
+                }
+                vtvContainer.innerHTML += `
+                    <div class="p-3 border rounded-xl flex flex-col justify-between ${badgeColor}">
+                        <div class="font-bold text-xs">${v.vehiculo} (${v.patente})</div>
+                        <div class="text-[11px] font-semibold mt-1">VTV: ${v.vtoVtv} - ${statusText}</div>
+                    </div>`;
+            });
 
             const cats = {};
             db.operarios.forEach(o => cats[o.categoria || 'General'] = (cats[o.categoria || 'General'] || 0) + 1);
@@ -368,12 +395,12 @@
                 if(!op.nombre.toLowerCase().includes(filter.toLowerCase()) && !String(op.leg).includes(filter)) return;
                 let isActive = !op.egreso || op.egreso.trim() === "";
                 let badge = isActive ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">Activo</span>' : '<span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Inactivo</span>';
-                let antiguedad = calcularAntiguedad(op.ingreso);
+                let ant = calcularAntiguedadDetalle(op.ingreso);
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('operario', ${idx})">
                         <td class="p-4 font-semibold text-blue-600">#${op.leg}</td>
                         <td class="p-4 font-medium">${op.nombre}</td>
-                        <td class="p-4 font-semibold text-slate-600">${antiguedad}</td>
+                        <td class="p-4 font-semibold text-slate-600">${ant.texto}</td>
                         <td class="p-4">${badge}</td>
                         <td class="p-4"><span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">${op.categoria}</span></td>
                         <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('operarios', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('operarios', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
@@ -440,7 +467,9 @@
                 if(!veh.vehiculo.toLowerCase().includes(filter.toLowerCase()) && !veh.patente.toLowerCase().includes(filter.toLowerCase())) return;
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('vehiculo', ${idx})">
-                        <td class="p-4 font-medium">${veh.vehiculo}</td><td class="p-4 font-semibold">${veh.patente}</td>
+                        <td class="p-4 font-medium">${veh.vehiculo}</td>
+                        <td class="p-4 font-semibold">${veh.patente}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold">${veh.vtoVtv || 'S/D'}</span></td>
                         <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('vehiculos', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('vehiculos', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
                     </tr>`;
             });
@@ -452,7 +481,7 @@
                 let op = db.operarios[idx];
                 let isActive = !op.egreso || op.egreso.trim() === "";
                 title = "Ficha del Operario";
-                html = `<p><strong>Nombre y Apellido:</strong> ${op.nombre}</p><p><strong>Legajo:</strong> ${op.leg}</p><p><strong>CUIL:</strong> ${op.cuil}</p><p><strong>Antigüedad:</strong> ${calcularAntiguedad(op.ingreso)}</p><p><strong>Estado:</strong> ${isActive ? 'Activo' : 'Inactivo'}</p><p><strong>Domicilio y Tel.:</strong> ${op.domicilio}</p><p><strong>Ingreso:</strong> ${op.ingreso}</p><p><strong>Egreso:</strong> ${op.egreso || 'Activo'}</p><p><strong>Categoría:</strong> ${op.categoria}</p>`;
+                html = `<p><strong>Nombre y Apellido:</strong> ${op.nombre}</p><p><strong>Legajo:</strong> ${op.leg}</p><p><strong>CUIL:</strong> ${op.cuil}</p><p><strong>Antigüedad:</strong> ${calcularAntiguedadDetalle(op.ingreso).texto}</p><p><strong>Estado:</strong> ${isActive ? 'Activo' : 'Inactivo'}</p><p><strong>Domicilio y Tel.:</strong> ${op.domicilio}</p><p><strong>Ingreso:</strong> ${op.ingreso}</p><p><strong>Egreso:</strong> ${op.egreso || 'Activo'}</p><p><strong>Categoría:</strong> ${op.categoria}</p>`;
             } else if(type === 'cliente') {
                 let cli = db.clientes[idx];
                 title = "Información del Cliente";
