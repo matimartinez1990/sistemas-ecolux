@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión Integral - Ecolux (En Red)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-72 bg-slate-900 text-white flex flex-col shadow-xl">
+            <div class="p-6 text-2xl font-bold tracking-wider border-b border-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-network-wired text-emerald-400"></i> Ecolux Red
+            </div>
+            <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition bg-blue-600 text-white font-medium shadow-md"><i class="fa-solid fa-chart-pie w-5"></i> Dashboard</button>
+                <button onclick="switchTab('operarios')" id="btn-operarios" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-users w-5"></i> Operarios</button>
+                <button onclick="switchTab('clientes')" id="btn-clientes" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-building w-5"></i> Clientes</button>
+                <button onclick="switchTab('personal')" id="btn-personal" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-id-badge w-5"></i> Pers. Oficial</button>
+                <button onclick="switchTab('proveedores')" id="btn-proveedores" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-truck-fast w-5"></i> Proveedores</button>
+                <button onclick="switchTab('numeros')" id="btn-numeros" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-address-book w-5"></i> Números y ART</button>
+                <button onclick="switchTab('vehiculos')" id="btn-vehiculos" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-car w-5"></i> Vehículos</button>
+            </nav>
+            <div class="p-4 border-t border-slate-800 bg-slate-950 space-y-2">
+                <label class="block text-xs text-slate-400 font-semibold">SUBIR EXCEL (IMPORTAR):</label>
+                <input type="file" id="excelFile" accept=".xls, .xlsx" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-8 border-b border-slate-200">
+                <h1 id="page-title" class="text-xl font-bold text-slate-800">📊 Dashboard Interactivo</h1>
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold animate-pulse">🟢 Conectado en Tiempo Real</span>
+            </header>
+
+            <div class="p-8">
+                <!-- DASHBOARD -->
+                <div id="view-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Total Operarios</p><h3 id="kpi-operarios" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-emerald-600 uppercase">Activos</p><h3 id="kpi-activos" class="text-2xl font-bold text-emerald-600 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-red-600 uppercase">Inactivos</p><h3 id="kpi-inactivos" class="text-2xl font-bold text-red-600 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Clientes</p><h3 id="kpi-clientes" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Proveedores</p><h3 id="kpi-proveedores" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p class="text-xs font-medium text-slate-500 uppercase">Vehículos</p><h3 id="kpi-vehiculos" class="text-2xl font-bold text-slate-800 mt-1">0</h3></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-slate-700 mb-4">Operarios por Categoría</h3>
+                            <div class="h-64 flex items-center justify-center"><canvas id="chartCategorias"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-700 mb-2">🌐 Servidor Central Activo</h3>
+                                <p class="text-sm text-slate-600 mb-4">Puedes subir tu archivo Excel en la barra lateral para importar todos los datos de golpe directamente al servidor compartido de la oficina.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OPERARIOS -->
+                <div id="view-operarios" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchOperario" placeholder="Buscar operario..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('operarios')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-user-plus"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Legajo</th><th class="p-4">Apellido y Nombre</th><th class="p-4">Estado</th><th class="p-4">Categoría</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-operarios-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CLIENTES -->
+                <div id="view-clientes" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchCliente" placeholder="Buscar cliente..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('clientes')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-building-user"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Razón Social</th><th class="p-4">Dirección</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-clientes-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PERSONAL OFICIAL -->
+                <div id="view-personal" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchPersonal" placeholder="Buscar personal..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('personal')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-user-plus"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Apellido y Nombre</th><th class="p-4">Celular Ecolux</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-personal-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PROVEEDORES -->
+                <div id="view-proveedores" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchProveedor" placeholder="Buscar proveedor..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('proveedores')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-truck"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Proveedor</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-proveedores-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- NÚMEROS Y ART -->
+                <div id="view-numeros" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchNumero" placeholder="Buscar concepto..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('numeros')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-plus"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Concepto</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-numeros-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VEHÍCULOS -->
+                <div id="view-vehiculos" class="hidden space-y-6">
+                    <div class="flex justify-between items-center gap-4">
+                        <input type="text" id="searchVehiculo" placeholder="Buscar vehículo..." class="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-sm shadow-sm">
+                        <button onclick="openModalAdd('vehiculos')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-3 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-car"></i> Agregar</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase"><th class="p-4">Vehículo</th><th class="p-4">Patente</th><th class="p-4 text-center">Acciones</th></tr></thead>
+                            <tbody id="table-vehiculos-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DETALLE -->
+    <div id="modal-detail" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center"><h3 id="modal-title" class="font-bold text-lg">Detalle</h3><button onclick="closeModal('modal-detail')" class="text-white text-xl font-bold">&times;</button></div>
+            <div class="p-6 space-y-3 text-slate-700 text-sm" id="modal-body"></div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end"><button onclick="closeModal('modal-detail')" class="px-5 py-2 bg-slate-200 rounded-xl font-medium text-sm">Cerrar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL FORMULARIO -->
+    <div id="modal-form" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden p-6">
+            <h3 id="form-title" class="font-bold text-lg mb-4 text-slate-800">Formulario</h3>
+            <form onsubmit="handleFormSubmit(event)" class="space-y-3">
+                <div id="form-fields" class="space-y-3"></div>
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modal-form')" class="px-4 py-2 bg-slate-200 rounded-xl text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let db = { operarios: [], clientes: [], personal: [], proveedores: [], numeros: [], vehiculos: [] };
+        let chartInstance = null;
+        let currentEditingType = null;
+        let currentEditingIdx = null;
+
+        async function loadDataFromBackend() {
+            try {
+                const res = await fetch('/api/data');
+                db = await res.json();
+                renderDashboard();
+                refreshCurrentView();
+            } catch(e) {
+                console.error("Error al conectar con el servidor", e);
+            }
+        }
+
+        async function saveDBToBackend() {
+            try {
+                await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(db)
+                });
+                renderDashboard();
+                refreshCurrentView();
+            } catch(e) {
+                alert("Error al guardar en el servidor central.");
+            }
+        }
+
+        function switchTab(tab) {
+            ['dashboard', 'operarios', 'clientes', 'personal', 'proveedores', 'numeros', 'vehiculos'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300";
+            });
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            document.getElementById(`btn-${tab}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition bg-blue-600 text-white font-medium shadow-md";
+            
+            const titles = { dashboard: "📊 Dashboard Interactivo", operarios: "👥 Gestión de Operarios", clientes: "🏢 Gestión de Clientes", personal: "🆔 Personal Oficial", proveedores: "🚛 Proveedores", numeros: "📞 Números y ART", vehiculos: "🚗 Vehículos y VTV" };
+            document.getElementById('page-title').innerText = titles[tab];
+            
+            if(tab === 'dashboard') renderDashboard();
+            if(tab === 'operarios') renderOperarios();
+            if(tab === 'clientes') renderClientes();
+            if(tab === 'personal') renderPersonal();
+            if(tab === 'proveedores') renderProveedores();
+            if(tab === 'numeros') renderNumeros();
+            if(tab === 'vehiculos') renderVehiculos();
+        }
+
+        function renderDashboard() {
+            let activos = db.operarios.filter(o => !o.egreso || o.egreso.trim() === "").length;
+            let inactivos = db.operarios.length - activos;
+
+            document.getElementById('kpi-operarios').innerText = db.operarios.length;
+            document.getElementById('kpi-activos').innerText = activos;
+            document.getElementById('kpi-inactivos').innerText = inactivos;
+            document.getElementById('kpi-clientes').innerText = db.clientes.length;
+            document.getElementById('kpi-proveedores').innerText = db.proveedores.length;
+            document.getElementById('kpi-vehiculos').innerText = db.vehiculos.length;
+
+            const cats = {};
+            db.operarios.forEach(o => cats[o.categoria || 'General'] = (cats[o.categoria || 'General'] || 0) + 1);
+
+            const ctx = document.getElementById('chartCategorias').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderOperarios(filter = '') {
+            const tbody = document.getElementById('table-operarios-body');
+            tbody.innerHTML = '';
+            db.operarios.forEach((op, idx) => {
+                if(!op.nombre.toLowerCase().includes(filter.toLowerCase()) && !String(op.leg).includes(filter)) return;
+                let isActive = !op.egreso || op.egreso.trim() === "";
+                let badge = isActive ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">Activo</span>' : '<span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Inactivo</span>';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('operario', ${idx})">
+                        <td class="p-4 font-semibold text-blue-600">#${op.leg}</td><td class="p-4 font-medium">${op.nombre}</td><td class="p-4">${badge}</td><td class="p-4"><span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">${op.categoria}</span></td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('operarios', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('operarios', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function renderClientes(filter = '') {
+            const tbody = document.getElementById('table-clientes-body');
+            tbody.innerHTML = '';
+            db.clientes.forEach((cli, idx) => {
+                if(!cli.nombre.toLowerCase().includes(filter.toLowerCase())) return;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('cliente', ${idx})">
+                        <td class="p-4 font-semibold text-slate-800">${cli.nombre}</td><td class="p-4 text-slate-600">${cli.direccion}</td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('clientes', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('clientes', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function renderPersonal(filter = '') {
+            const tbody = document.getElementById('table-personal-body');
+            tbody.innerHTML = '';
+            db.personal.forEach((per, idx) => {
+                if(!per.nombre.toLowerCase().includes(filter.toLowerCase())) return;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('personal', ${idx})">
+                        <td class="p-4 font-medium">${per.nombre}</td><td class="p-4">${per.celular}</td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('personal', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('personal', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function renderProveedores(filter = '') {
+            const tbody = document.getElementById('table-proveedores-body');
+            tbody.innerHTML = '';
+            db.proveedores.forEach((prov, idx) => {
+                if(!prov.nombre.toLowerCase().includes(filter.toLowerCase())) return;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('proveedor', ${idx})">
+                        <td class="p-4 font-medium text-blue-600">${prov.nombre}</td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('proveedores', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('proveedores', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function renderNumeros(filter = '') {
+            const tbody = document.getElementById('table-numeros-body');
+            tbody.innerHTML = '';
+            db.numeros.forEach((num, idx) => {
+                if(!num.concepto.toLowerCase().includes(filter.toLowerCase())) return;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('numero', ${idx})">
+                        <td class="p-4 font-medium">${num.concepto}</td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('numeros', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('numeros', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function renderVehiculos(filter = '') {
+            const tbody = document.getElementById('table-vehiculos-body');
+            tbody.innerHTML = '';
+            db.vehiculos.forEach((veh, idx) => {
+                if(!veh.vehiculo.toLowerCase().includes(filter.toLowerCase()) && !veh.patente.toLowerCase().includes(filter.toLowerCase())) return;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetail('vehiculo', ${idx})">
+                        <td class="p-4 font-medium">${veh.vehiculo}</td><td class="p-4 font-semibold">${veh.patente}</td>
+                        <td class="p-4 text-center"><button onclick="event.stopPropagation(); openModalEdit('vehiculos', ${idx})" class="text-blue-500 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="event.stopPropagation(); deleteItem('vehiculos', ${idx})" class="text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function showDetail(type, idx) {
+            let title = "", html = "";
+            if(type === 'operario') {
+                let op = db.operarios[idx];
+                let isActive = !op.egreso || op.egreso.trim() === "";
+                title = "Ficha del Operario";
+                html = `<p><strong>Nombre y Apellido:</strong> ${op.nombre}</p><p><strong>Legajo:</strong> ${op.leg}</p><p><strong>CUIL:</strong> ${op.cuil}</p><p><strong>Estado:</strong> ${isActive ? 'Activo' : 'Inactivo'}</p><p><strong>Domicilio y Tel.:</strong> ${op.domicilio}</p><p><strong>Ingreso:</strong> ${op.ingreso}</p><p><strong>Egreso:</strong> ${op.egreso || 'Activo'}</p><p><strong>Categoría:</strong> ${op.categoria}</p>`;
+            } else if(type === 'cliente') {
+                let cli = db.clientes[idx];
+                title = "Información del Cliente";
+                html = `<p><strong>Razón Social:</strong> ${cli.nombre}</p><p><strong>CUIT:</strong> ${cli.facturacion}</p><p><strong>Mail:</strong> ${cli.mail}</p><p><strong>Dirección:</strong> ${cli.direccion}</p>`;
+            } else if(type === 'personal') {
+                let p = db.personal[idx];
+                title = "Personal Oficial";
+                html = `<p><strong>Nombre:</strong> ${p.nombre}</p><p><strong>Celular:</strong> ${p.celular}</p><p><strong>Modelo:</strong> ${p.modelo}</p><p><strong>CUIL:</strong> ${p.cuil}</p>`;
+            } else if(type === 'proveedor') {
+                let p = db.proveedores[idx];
+                title = "Proveedor";
+                html = `<p><strong>Nombre:</strong> ${p.nombre}</p><p><strong>Detalle:</strong> ${p.detalle}</p>`;
+            } else if(type === 'numero') {
+                let n = db.numeros[idx];
+                title = "Concepto / ART";
+                html = `<p><strong>Concepto:</strong> ${n.concepto}</p><p><strong>Número:</strong> ${n.numero}</p>`;
+            } else if(type === 'vehiculo') {
+                let v = db.vehiculos[idx];
+                title = "Vehículo";
+                html = `<p><strong>Vehículo:</strong> ${v.vehiculo}</p><p><strong>Patente:</strong> ${v.patente}</p><p><strong>Dueño:</strong> ${v.dueno}</p><p><strong>Chasis:</strong> ${v.chasis}</p><p><strong>Motor:</strong> ${v.motor}</p><p><strong>Seguro:</strong> ${v.seguro}</p><p><strong>VTV:</strong> ${v.vtoVtv}</p>`;
+            }
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = html;
+            openModal('modal-detail');
+        }
+
+        function openModalAdd(type) { currentEditingType = type; currentEditingIdx = null; document.getElementById('form-title').innerText = "Agregar"; buildFormFields(type, {}); openModal('modal-form'); }
+        function openModalEdit(type, idx) { currentEditingType = type; currentEditingIdx = idx; document.getElementById('form-title').innerText = "Modificar"; buildFormFields(type, db[type][idx]); openModal('modal-form'); }
+
+        function buildFormFields(type, data) {
+            let container = document.getElementById('form-fields');
+            container.innerHTML = '';
+            if(type === 'operarios') {
+                container.innerHTML = `
+                    <input type="number" placeholder="Legajo" id="f-leg" value="${data.leg || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="Apellido y Nombre" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="CUIL" id="f-cuil" value="${data.cuil || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <input type="text" placeholder="Categoría" id="f-categoria" value="${data.categoria || ''}" required class="w-full p-2.5 border rounded-xl text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-xs">Ingreso</label><input type="date" id="f-ingreso" value="${data.ingreso || ''}" required class="w-full p-2 border rounded-xl text-sm"></div>
+                        <div><label class="text-xs">Egreso</label><input type="date" id="f-egreso" value="${data.egreso || ''}" class="w-full p-2 border rounded-xl text-sm"></div>
+                    </div>
+                    <input type="text" placeholder="Domicilio y Teléfono" id="f-domicilio" value="${data.domicilio || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+            } else if(type === 'clientes') {
+                container.innerHTML = `<input type="text" placeholder="Razón Social" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Dirección" id="f-direccion" value="${data.direccion || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Mail" id="f-mail" value="${data.mail || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="CUIT" id="f-facturacion" value="${data.facturacion || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+            } else if(type === 'personal') {
+                container.innerHTML = `<input type="text" placeholder="Nombre" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Celular" id="f-celular" value="${data.celular || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Modelo" id="f-modelo" value="${data.modelo || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="CUIL" id="f-cuil" value="${data.cuil || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+            } else if(type === 'proveedores') {
+                container.innerHTML = `<input type="text" placeholder="Proveedor" id="f-nombre" value="${data.nombre || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Detalle" id="f-detalle" value="${data.detalle || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+            } else if(type === 'numeros') {
+                container.innerHTML = `<input type="text" placeholder="Concepto" id="f-concepto" value="${data.concepto || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Número" id="f-numero" value="${data.numero || ''}" required class="w-full p-2.5 border rounded-xl text-sm">`;
+            } else if(type === 'vehiculos') {
+                container.innerHTML = `<input type="text" placeholder="Vehículo" id="f-vehiculo" value="${data.vehiculo || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Patente" id="f-patente" value="${data.patente || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Dueño" id="f-dueno" value="${data.dueno || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Chasis" id="f-chasis" value="${data.chasis || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Motor" id="f-motor" value="${data.motor || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="text" placeholder="Seguro" id="f-seguro" value="${data.seguro || ''}" required class="w-full p-2.5 border rounded-xl text-sm"><input type="date" placeholder="VTV" id="f-vtv" value="${data.vtoVtv || ''}" required class="w-full p-2 border rounded-xl text-sm">`;
+            }
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            let obj = {};
+            if(currentEditingType === 'operarios') {
+                obj = { leg: Number(document.getElementById('f-leg').value), nombre: document.getElementById('f-nombre').value, cuil: document.getElementById('f-cuil').value, categoria: document.getElementById('f-categoria').value, ingreso: document.getElementById('f-ingreso').value, egreso: document.getElementById('f-egreso').value, domicilio: document.getElementById('f-domicilio').value };
+            } else if(currentEditingType === 'clientes') {
+                obj = { nombre: document.getElementById('f-nombre').value, direccion: document.getElementById('f-direccion').value, mail: document.getElementById('f-mail').value, facturacion: document.getElementById('f-facturacion').value };
+            } else if(currentEditingType === 'personal') {
+                obj = { nombre: document.getElementById('f-nombre').value, celular: document.getElementById('f-celular').value, modelo: document.getElementById('f-modelo').value, cuil: document.getElementById('f-cuil').value };
+            } else if(currentEditingType === 'proveedores') {
+                obj = { nombre: document.getElementById('f-nombre').value, detalle: document.getElementById('f-detalle').value };
+            } else if(currentEditingType === 'numeros') {
+                obj = { concepto: document.getElementById('f-concepto').value, numero: document.getElementById('f-numero').value };
+            } else if(currentEditingType === 'vehiculos') {
+                obj = { vehiculo: document.getElementById('f-vehiculo').value, patente: document.getElementById('f-patente').value, dueno: document.getElementById('f-dueno').value, chasis: document.getElementById('f-chasis').value, motor: document.getElementById('f-motor').value, seguro: document.getElementById('f-seguro').value, vtoVtv: document.getElementById('f-vtv').value };
+            }
+
+            if(currentEditingIdx !== null) db[currentEditingType][currentEditingIdx] = obj;
+            else db[currentEditingType].push(obj);
+
+            await saveDBToBackend();
+            closeModal('modal-form');
+        }
+
+        async function deleteItem(type, idx) {
+            if(confirm("¿Seguro de eliminar?")) {
+                db[type].splice(idx, 1);
+                await saveDBToBackend();
+            }
+        }
+
+        function refreshCurrentView() {
+            renderOperarios(document.getElementById('searchOperario').value);
+            renderClientes(document.getElementById('searchCliente').value);
+            renderPersonal(document.getElementById('searchPersonal').value);
+            renderProveedores(document.getElementById('searchProveedor').value);
+            renderNumeros(document.getElementById('searchNumero').value);
+            renderVehiculos(document.getElementById('searchVehiculo').value);
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
+        document.getElementById('searchOperario').addEventListener('input', e => renderOperarios(e.target.value));
+        document.getElementById('searchCliente').addEventListener('input', e => renderClientes(e.target.value));
+        document.getElementById('searchPersonal').addEventListener('input', e => renderPersonal(e.target.value));
+        document.getElementById('searchProveedor').addEventListener('input', e => renderProveedores(e.target.value));
+        document.getElementById('searchNumero').addEventListener('input', e => renderNumeros(e.target.value));
+        document.getElementById('searchVehiculo').addEventListener('input', e => renderVehiculos(e.target.value));
+
+        // Lector de Excel integrado para red
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                if(workbook.Sheets[' Empleados']) {
+                    db.operarios = XLSX.utils.sheet_to_json(workbook.Sheets[' Empleados']).filter(r => r['Leg.']).map(r => ({
+                        leg: r['Leg.'],
+                        nombre: r['Apellido y Nombre'] || '',
+                        cuil: String(r['CUIL'] || ''),
+                        domicilio: r['Teléfono y dirección'] || '',
+                        ingreso: r['Fecha'] ? String(r['Fecha']).substring(0,10) : '',
+                        egreso: r['Fecha '] ? String(r['Fecha ']).substring(0,10) : '',
+                        categoria: r['Categoría'] || 'General'
+                    }));
+                }
+                if(workbook.Sheets['Clientes']) {
+                    db.clientes = XLSX.utils.sheet_to_json(workbook.Sheets['Clientes']).map(r => ({
+                        nombre: r['Clientes'] || '',
+                        direccion: r['Direccion '] || '',
+                        mail: r['Mail'] || '',
+                        facturacion: r['Datos facturacion'] || ''
+                    }));
+                }
+                await saveDBToBackend();
+                alert("¡Excel importado y guardado en el servidor central con éxito!");
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        loadDataFromBackend();
+    </script>
+</body>
+</html>
