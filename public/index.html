@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión Integral - Ecolux (En Red)</title>
+    <title>Ecolux - Sistema de Gestión Integral</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,10 +12,20 @@
 <body class="bg-slate-100 font-sans text-slate-800">
 
     <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar con Identidad Ecolux -->
         <aside class="w-72 bg-slate-900 text-white flex flex-col shadow-xl">
-            <div class="p-6 text-2xl font-bold tracking-wider border-b border-slate-800 flex items-center gap-3">
-                <i class="fa-solid fa-network-wired text-emerald-400"></i> Ecolux Red
+            <div class="p-6 border-b border-slate-800 flex flex-col gap-1">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2.5 rounded-xl text-white font-black text-lg tracking-wider shadow-md">
+                        <i class="fa-solid fa-broom-ball"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black tracking-wider text-white">ECOLUX</h2>
+                        <p class="text-[10px] text-blue-400 font-semibold uppercase tracking-widest">Excelencia en Limpieza</p>
+                    </div>
+                </div>
             </div>
+
             <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition bg-blue-600 text-white font-medium shadow-md"><i class="fa-solid fa-chart-pie w-5"></i> Dashboard</button>
                 <button onclick="switchTab('operarios')" id="btn-operarios" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition hover:bg-slate-800 text-slate-300"><i class="fa-solid fa-users w-5"></i> Operarios</button>
@@ -31,10 +41,14 @@
             </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white shadow-sm h-16 flex items-center justify-between px-8 border-b border-slate-200">
                 <h1 id="page-title" class="text-xl font-bold text-slate-800">📊 Dashboard Interactivo</h1>
-                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold animate-pulse">🟢 Conectado en Tiempo Real</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500 font-medium">Av. Dorrego 2646, CABA | 4777-9336</span>
+                    <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold animate-pulse">🟢 En Red</span>
+                </div>
             </header>
 
             <div class="p-8">
@@ -56,8 +70,8 @@
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-bold text-slate-700 mb-2">🌐 Servidor Central Activo</h3>
-                                <p class="text-sm text-slate-600 mb-4">Puedes subir tu archivo Excel en la barra lateral para importar todos los datos de golpe directamente al servidor compartido de la oficina.</p>
+                                <h3 class="font-bold text-slate-700 mb-2">✨ Ecolux - Sistema de Gestión en la Nube</h3>
+                                <p class="text-sm text-slate-600 mb-4">Los datos se sincronizan automáticamente en tiempo real para todo el equipo.</p>
                             </div>
                         </div>
                     </div>
@@ -441,7 +455,6 @@
         document.getElementById('searchNumero').addEventListener('input', e => renderNumeros(e.target.value));
         document.getElementById('searchVehiculo').addEventListener('input', e => renderVehiculos(e.target.value));
 
-        // Lector de Excel integrado para red
         document.getElementById('excelFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(!file) return;
