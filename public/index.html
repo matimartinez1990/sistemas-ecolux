@@ -69,7 +69,7 @@
                     <button onclick="logout()" class="text-red-400 hover:text-red-300 font-semibold underline">Salir</button>
                 </div>
                 <div>
-                    <label class="block text-[11px] text-slate-400 font-semibold mb-1">SUBIR EXCEL (IMPORTAR):</label>
+                    <label class="block text-[11px] text-slate-400 font-semibold mb-1">SUBIR EXCEL COMPLETO:</label>
                     <input type="file" id="excelFile" accept=".xls, .xlsx" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                 </div>
             </div>
@@ -98,7 +98,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Desglose de Antigüedades en Dashboard -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
                             <h3 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-clock text-blue-600 mr-2"></i> Detalle de Antigüedad del Personal</h3>
                             <div class="flex-1 overflow-y-auto max-h-60 space-y-2 pr-2" id="dashboard-antiguedad-list"></div>
@@ -110,7 +109,6 @@
                         </div>
                     </div>
 
-                    <!-- Alertas de Vencimiento VTV -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                         <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Estado de Vencimiento VTV de Vehículos</h3>
                         <div id="vtv-alerts-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
@@ -287,6 +285,23 @@
             } catch(e) {
                 alert("Error al guardar en el servidor central.");
             }
+        }
+
+        function parseExcelDate(val) {
+            if(!val) return "";
+            if(typeof val === 'number') {
+                const date = new Date(Math.round((val - (25567 + 2)) * 86400 * 1000));
+                return date.toISOString().split('T')[0];
+            }
+            let str = String(val).trim();
+            if(str.includes('/')) {
+                let parts = str.split('/');
+                if(parts.length === 3) {
+                    let year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                    return `${year}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                }
+            }
+            return str.substring(0, 10);
         }
 
         function calcularAntiguedadDetalle(fechaIngreso) {
@@ -602,25 +617,30 @@
         document.getElementById('searchNumero').addEventListener('input', e => renderNumeros(e.target.value));
         document.getElementById('searchVehiculo').addEventListener('input', e => renderVehiculos(e.target.value));
 
+        // Lector completo de todas las solapas del Excel de Ecolux
         document.getElementById('excelFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                
+                // 1. Solapa Empleados
                 if(workbook.Sheets[' Empleados']) {
                     db.operarios = XLSX.utils.sheet_to_json(workbook.Sheets[' Empleados']).filter(r => r['Leg.']).map(r => ({
                         leg: r['Leg.'],
                         nombre: r['Apellido y Nombre'] || '',
                         cuil: String(r['CUIL'] || ''),
                         domicilio: r['Teléfono y dirección'] || '',
-                        ingreso: r['Fecha'] ? String(r['Fecha']).substring(0,10) : '',
-                        egreso: r['Fecha '] ? String(r['Fecha ']).substring(0,10) : '',
+                        ingreso: parseExcelDate(r['Fecha']),
+                        egreso: parseExcelDate(r['Fecha ']),
                         categoria: r['Categoría'] || 'General'
                     }));
                 }
+
+                // 2. Solapa Clientes
                 if(workbook.Sheets['Clientes']) {
-                    db.clientes = XLSX.utils.sheet_to_json(workbook.Sheets['Clientes']).map(r => ({
+                    db.clientes = XLSX.utils.sheet_to_json(workbook.Sheets['Clientes']).filter(r => r['Clientes']).map(r => ({
                         nombre: r['Clientes'] || '',
                         direccion: r['Direccion '] || '',
                         mail: r['Mail'] || '',
@@ -628,8 +648,50 @@
                         estado: 'Activo'
                     }));
                 }
+
+                // 3. Solapa Personal Oficial
+                if(workbook.Sheets['Personal Oficial']) {
+                    db.personal = XLSX.utils.sheet_to_json(workbook.Sheets['Personal Oficial']).filter(r => r['Apellido y Nombre']).map(r => ({
+                        nombre: r['Apellido y Nombre'] || '',
+                        celular: String(r['Celular Ecolux'] || ''),
+                        modelo: r['Modelo'] || '',
+                        cuil: String(r['CUIL'] || '')
+                    }));
+                }
+
+                // 4. Solapa Proveedores
+                if(workbook.Sheets['Proveedores']) {
+                    db.proveedores = XLSX.utils.sheet_to_json(workbook.Sheets['Proveedores']).filter(r => r['Proveedores']).map(r => ({
+                        nombre: r['Proveedores'] || '',
+                        detalle: r['Detalle'] || ''
+                    }));
+                }
+
+                // 5. Solapa Números / ART
+                if(workbook.Sheets['Numeros'] || workbook.Sheets['Números']) {
+                    let sheet = workbook.Sheets['Numeros'] || workbook.Sheets['Números'];
+                    db.numeros = XLSX.utils.sheet_to_json(sheet).map(r => ({
+                        concepto: r['Concepto'] || Object.values(r)[0] || '',
+                        numero: r['Numero'] || r['Número'] || Object.values(r)[1] || ''
+                    }));
+                }
+
+                // 6. Solapa Vehículos
+                if(workbook.Sheets['Vehiculos'] || workbook.Sheets['Vehículos']) {
+                    let sheet = workbook.Sheets['Vehiculos'] || workbook.Sheets['Vehículos'];
+                    db.vehiculos = XLSX.utils.sheet_to_json(sheet).map(r => ({
+                        vehiculo: r['Vehículo'] || r['Vehiculo'] || '',
+                        patente: r['Patente'] || '',
+                        dueno: r['Dueño'] || r['Dueno'] || '',
+                        chasis: String(r['Chasis'] || ''),
+                        motor: String(r['Motor'] || ''),
+                        seguro: r['Seguro'] || '',
+                        vtoVtv: parseExcelDate(r['Vto. VTV'] || r['VTV'] || '')
+                    }));
+                }
+
                 await saveDBToBackend();
-                alert("¡Excel importado y guardado en el servidor central con éxito!");
+                alert("¡Todas las solapas e información del Excel de Ecolux se importaron y guardaron con éxito!");
             };
             reader.readAsArrayBuffer(file);
         });
