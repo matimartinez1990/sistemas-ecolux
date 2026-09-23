@@ -1,12 +1,13 @@
 {
   "name": "ecolux-backend",
   "version": "1.0.0",
-  "description": "Servidor backend para sistema de gestión Ecolux",
+  "description": "Sistema de Gestion Integral Ecolux",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "pg": "^8.11.3"
   }
 }
